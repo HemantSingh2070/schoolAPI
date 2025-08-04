@@ -329,5 +329,5 @@ This project is licensed under the ISC License.
 
 For support and questions, please contact:
 - **Author**: Hemant Singh
-- **Email**: [Your Email]
-- **GitHub**: [Your GitHub Profile]
+- **Email**: HemantSingh2070@gmail.com  
+- **GitHub**: HemantSingh2070
