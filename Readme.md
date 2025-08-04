@@ -1,114 +1,90 @@
 # Node JS Assignment: School Management API
 
-## Task: Develop Node.js APIs for School Management
+## Overview
+A robust Node.js REST API for managing school data with geolocation-based proximity search. Built with Express.js, MySQL, and modern security practices.
 
-### Objective:
-The goal of this project is to implement a set of APIs using Node.js, Express.js, and MySQL to manage school data. The system will allow users to:
-- Add new schools to the database.
-- Retrieve a list of schools sorted by proximity to a user-specified location (latitude and longitude).
+## Features
+- 🏫 Add new schools to database
+- 📍 Find schools by proximity to user location
+- 🔒 Comprehensive input validation and security
+- 🚀 High-performance database queries with connection pooling
+- 📊 Health check endpoints
+- 🛡️ Rate limiting and CORS protection
+- 📝 Comprehensive error handling and logging
 
----
+## Quick Start
 
-## Database Setup
+### Prerequisites
+- Node.js (v14 or higher)
+- MySQL (v8.0 or higher)
+- npm or yarn package manager
 
-### Schools Table:
+### Installation
 
-Create a MySQL table named `schools` with the following fields:
-- `id` (Primary Key, AUTO_INCREMENT)
-- `name` (VARCHAR)
-- `address` (VARCHAR)
-- `latitude` (FLOAT)
-- `longitude` (FLOAT)
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd schoolAPI
+```
 
+2. **Install dependencies**
+```bash
+npm install
+```
 
-# MY SQL
-  CREATE TABLE schools (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
-  address VARCHAR(255) NOT NULL,
-  latitude FLOAT NOT NULL,
-  longitude FLOAT NOT NULL
-);
+3. **Set up environment variables**
+```bash
+cp .env.example .env
+# Edit .env with your database credentials
+```
 
-## API Endpoints
-### 1. Add School API
-Endpoint: /addSchool
-Method: POST
-Payload Example:
-json
-Copy code
-```{
-  "name": "KIET School",
-  "address": "Muradnagar, Uttar Pradesh 201206",
-  "latitude": 28.8100,
-  "longitude": 77.4931
+4. **Create database and tables**
+```bash
+# Run the SQL script in your MySQL database
+mysql -u your_username -p < Public/schoolTable.sql
+```
+
+5. **Start the application**
+```bash
+# Development mode
+npm run dev
+
+# Production mode
+npm start
+```
+
+## API Documentation
+
+### Base URL
+```
+Local: http://localhost:3000/api/v1
+Production: https://your-domain.com/api/v1
+```
+
+### Health Check
+```http
+GET /health
+```
+
+**Response:**
+```json
+{
+  "status": "OK",
+  "timestamp": "2024-08-04T10:30:00.000Z",
+  "version": "1.0.0"
 }
 ```
-Description:
 
-This API accepts data for a new school and adds it to the MySQL database.
-It validates the input data to ensure that all fields are non-empty and contain the correct data types (e.g., latitude and longitude must be valid float values).
-The request must include:
-name: Name of the school
-address: Full address of the school
-latitude: Latitude of the school
-longitude: Longitude of the school
-Sample Request:
+### 1. Add School
+Add a new school to the database.
 
-URL: https://school-api-byhemantsingh.vercel.app/addSchool
-Method: POST
-Body:
-json
-Copy code
-```{
-  "name": "KIET School",
-  "address": "Muradnagar, Uttar Pradesh 201206",
-  "latitude": 28.8100,
-  "longitude": 77.4931
-}
+```http
+POST /api/v1/addSchool
+Content-Type: application/json
 ```
-Response:
-Success: 201 Created
-Error (Missing Fields): 400 Bad Request
-### 2. List Schools API
-Endpoint: /listSchools
 
-Method: GET
-
-Query Parameters:
-
-latitude (float) - The user's latitude.
-longitude (float) - The user's longitude.
-Description:
-
-This API fetches all schools from the database and sorts them based on their proximity to the provided user's coordinates (latitude and longitude).
-The proximity is calculated using the Haversine formula, which computes the great-circle distance between two points (specified by their latitude and longitude).
-Sample Request:
-
-URL: https://school-api-byhemantsingh.vercel.app/listSchools
-Method: GET
-Body (Query Parameters):
-json
-Copy code
-```{
-  "latitude": 20.8100,
-  "longitude": 70.4931
-}
-```
-Response:
-Success: Returns a list of schools, sorted by proximity to the provided coordinates.
-Error (Missing Parameters): 400 Bad Request
-Error (Invalid Coordinates): 422 Unprocessable Entity
-Example API Calls
-1. Add School Example
-Request:
-
-POST https://school-api-byhemantsingh.vercel.app/addSchool
-Body:
-
-json
-Copy code
-```
+**Request Body:**
+```json
 {
   "name": "KIET School",
   "address": "Muradnagar, Uttar Pradesh 201206",
@@ -116,42 +92,242 @@ Copy code
   "longitude": 77.4931
 }
 ```
-Response:
 
-json
-Copy code
-```
+**Response (201 Created):**
+```json
 {
-  "message": "School added successfully."
-}
-```
-2. List Schools Example
-Request:
-
-GET https://school-api-byhemantsingh.vercel.app/listSchools?latitude=20.8100&longitude=70.4931
-
-Response:
-
-json
-Copy code
-```
-[
-  {
+  "success": true,
+  "message": "School added successfully",
+  "data": {
     "id": 1,
     "name": "KIET School",
     "address": "Muradnagar, Uttar Pradesh 201206",
     "latitude": 28.8100,
-    "longitude": 77.4931,
-    "distance": "150.2 km"
-  },
-  {
-    "id": 2,
-    "name": "ABC School",
-    "address": "Somewhere, Uttar Pradesh",
-    "latitude": 28.5000,
-    "longitude": 77.6000,
-    "distance": "200.5 km"
+    "longitude": 77.4931
   }
-]
-
+}
 ```
+
+**Validation Rules:**
+- `name`: Required, 1-255 characters
+- `address`: Required, 1-500 characters  
+- `latitude`: Required, number between -90 and 90
+- `longitude`: Required, number between -180 and 180
+
+### 2. List Nearby Schools
+Get schools sorted by proximity to a specified location.
+
+#### Option A: GET with Query Parameters
+```http
+GET /api/v1/listSchools?latitude=28.8100&longitude=77.4931&radius=50&limit=10
+```
+
+#### Option B: POST with JSON Body
+```http
+POST /api/v1/listSchools
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "latitude": 28.8100,
+  "longitude": 77.4931,
+  "radius": 50,
+  "limit": 10
+}
+```
+
+**Parameters:**
+- `latitude` (required): User's latitude (-90 to 90)
+- `longitude` (required): User's longitude (-180 to 180)
+- `radius` (optional): Search radius in km (default: 50, max: 1000)
+- `limit` (optional): Maximum results (default: 10, max: 100)
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Schools retrieved successfully",
+  "data": {
+    "userLocation": {
+      "latitude": 28.8100,
+      "longitude": 77.4931
+    },
+    "searchRadius": 50,
+    "totalSchools": 2,
+    "schools": [
+      {
+        "id": 1,
+        "name": "KIET School",
+        "address": "Muradnagar, Uttar Pradesh 201206",
+        "latitude": 28.8100,
+        "longitude": 77.4931,
+        "distance": "0.00 km"
+      },
+      {
+        "id": 2,
+        "name": "Delhi Public School",
+        "address": "Mathura Road, New Delhi 110076",
+        "latitude": 28.5244,
+        "longitude": 77.2479,
+        "distance": "35.42 km"
+      }
+    ]
+  }
+}
+```
+
+### 3. Get All Schools
+Retrieve all schools in the database.
+
+```http
+GET /api/v1/schools
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "All schools retrieved successfully",
+  "data": {
+    "totalSchools": 5,
+    "schools": [
+      {
+        "id": 1,
+        "name": "Bishop Cotton School",
+        "address": "Shimla, Himachal Pradesh 171001",
+        "latitude": 31.1048,
+        "longitude": 77.1734
+      }
+    ]
+  }
+}
+```
+
+## Error Handling
+
+All errors follow a consistent format:
+
+```json
+{
+  "success": false,
+  "error": "Error Type",
+  "message": "Detailed error message"
+}
+```
+
+**Common HTTP Status Codes:**
+- `200` - Success
+- `201` - Created
+- `400` - Bad Request (validation errors)
+- `404` - Not Found
+- `429` - Too Many Requests (rate limited)
+- `500` - Internal Server Error
+
+## Database Schema
+
+```sql
+CREATE TABLE school (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    address VARCHAR(500) NOT NULL,
+    latitude DECIMAL(10, 8) NOT NULL,
+    longitude DECIMAL(11, 8) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_coordinates (latitude, longitude),
+    INDEX idx_name (name),
+    
+    CONSTRAINT chk_latitude CHECK (latitude >= -90 AND latitude <= 90),
+    CONSTRAINT chk_longitude CHECK (longitude >= -180 AND longitude <= 180)
+);
+```
+
+## Security Features
+
+- **Rate Limiting**: 100 requests per 15 minutes per IP
+- **CORS Protection**: Configurable origin policies
+- **Input Validation**: Comprehensive validation using Joi
+- **SQL Injection Prevention**: Parameterized queries
+- **Helmet.js**: Security headers
+- **Request Size Limiting**: 10MB max payload
+
+## Development
+
+### Available Scripts
+```bash
+npm start          # Start production server
+npm run dev        # Start development server with nodemon
+npm test           # Run tests (to be implemented)
+```
+
+### Project Structure
+```
+├── Controllers/         # Request handlers
+├── Services/           # Business logic and database operations
+├── Routes/            # API route definitions
+├── middleware/        # Custom middleware (validation, etc.)
+├── Public/           # Database scripts and static files
+├── index.js          # Application entry point
+├── package.json      # Dependencies and scripts
+├── .env.example      # Environment variables template
+└── README.md         # Documentation
+```
+
+## Environment Variables
+
+Required environment variables:
+
+```env
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+
+# MySQL Database Configuration
+MYSQL_HOST=localhost
+MYSQL_USER=your_username
+MYSQL_PASSWORD=your_password
+MYSQL_DATABASE=schoolSetup
+MYSQL_PORT=3306
+```
+
+## Performance Considerations
+
+- **Connection Pooling**: Optimized MySQL connection management
+- **Database Indexing**: Indexed on coordinates and name for fast queries
+- **Query Optimization**: Efficient distance calculations
+- **Response Caching**: Consider implementing Redis for production
+- **Pagination**: Built-in result limiting
+
+## Future Enhancements
+
+- [ ] Unit and integration tests
+- [ ] API documentation with Swagger
+- [ ] Caching layer (Redis)
+- [ ] Geographic indexing for ultra-fast proximity search
+- [ ] School categories and filtering
+- [ ] User authentication and authorization
+- [ ] Audit logging
+- [ ] Docker containerization
+- [ ] CI/CD pipeline
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the ISC License.
+
+## Support
+
+For support and questions, please contact:
+- **Author**: Hemant Singh
+- **Email**: [Your Email]
+- **GitHub**: [Your GitHub Profile]
